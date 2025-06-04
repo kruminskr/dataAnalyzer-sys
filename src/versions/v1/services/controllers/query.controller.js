@@ -1,19 +1,20 @@
-const queyProcesor = (req, res) => {
+const queryModel = require('../models/query.model');
+const dataModel = require('../models/data.model');
+const aiModel = require('../models/ai.model');
+
+const processQuery = (req, res) => {
     try {
-        // query model
-        // turns the user query into:
-        // neededData = {countries: ['Germany'], years: [2020,2021,2022], dataType: 'housing'}
+        const userQuery = req.body.query;
 
-        // data model
-        // Turns the neededData into actual data from eurostat API
-        // data = [{year: 2020, value: 1200}, {year: 2021, value: 1350}, ...]
+        const neededData = queryModel.processQuery(userQuery);
 
-        // ai model
-        // turns the data into a response
-        // "Latvia's housing prices increased by 15%..."
+        const data = dataModel.getData(neededData);
+
+        // AI model generates a response based on the data - what should it return?
+        // const aiResponse = aiModel.generateResponse(data);
 
         const response = {
-            message: 'This is a mock response from the AI model',   
+            data,   
         }
 
         return res.status(200).json(
@@ -27,5 +28,6 @@ const queyProcesor = (req, res) => {
 }
 
 module.exports = {
-    queyProcesor
+    processQuery
 };
+
