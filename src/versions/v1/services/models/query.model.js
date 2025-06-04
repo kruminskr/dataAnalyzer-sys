@@ -1,7 +1,84 @@
-// Function that takes out the keywords from a user query
+require('dotenv').config();
 
-// statis function to extract keywords from a user query
+const countriesString = process.env.COUNTRIES;
+const dataTypesString = process.env.DATA_TYPES;
 
-// Later on the user query gets anylized by AI?
+const COUNTRIES = countriesString ? countriesString.split(',') : [];
+const DATA_TYPES = dataTypesString ? dataTypesString.split(',') : [];
 
-// Returns {countries: ['Germany'], years: [2020,2021,2022], dataType: 'housing'}
+const extractYears = (text) => {
+  const currentYear = new Date().getFullYear();
+  const yearsSet = new Set();
+
+const yearRegex = /\b(20\d{2})\b/g;
+    let match;
+    while ((match = yearRegex.exec(text)) !== null) {
+        const year = parseInt(match[1], 10);
+        if (year >= 2000 && year <= currentYear + 1) {
+        yearsSet.add(year);
+        }
+    }
+
+    const rangeRegex = /\b(?:from|between)\s+(20\d{2})\s+(?:to|and)\s+(20\d{2})\b/g;
+    while ((match = rangeRegex.exec(text)) !== null) {
+        let startYear = parseInt(match[1], 10);
+        let endYear = parseInt(match[2], 10);
+
+        if (startYear > endYear) {
+        [startYear, endYear] = [endYear, startYear];
+        }
+
+        for (let y = startYear; y <= endYear; y++) {
+        if (y >= 2000 && y <= currentYear + 1) {
+            yearsSet.add(y);
+        }
+        }
+    }
+
+    return Array.from(yearsSet).sort();
+}
+
+const extractCountries = (text) => {
+    const found = new Set();
+    const lowerText = text.toLowerCase();
+
+    for (const country of COUNTRIES) {
+        if (lowerText.includes(country.toLowerCase())) {
+        found.add(country);
+        }
+    }
+
+    return Array.from(found);
+}
+
+const extractDataTypes = (text) => {
+  const found = new Set();
+  const lowerText = text.toLowerCase();
+
+  for (const type of DATA_TYPES) {
+    if (lowerText.includes(type)) {
+      found.add(type);
+    }
+  }
+
+  return Array.from(found);
+}
+
+const processQuery = (userQuery) => {
+    const neededData =  {
+        countries: extractCountries(userQuery),
+        years: extractYears(userQuery),
+        dataType: extractDataTypes(userQuery),
+    };
+
+    return neededData;
+}
+
+module.exports = {
+    processQuery
+}
+
+// TO-DO
+// 1. statis function to extract keywords from a user query
+
+// 2. Later on the user query gets anylized by AI?
