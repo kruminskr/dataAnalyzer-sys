@@ -2,23 +2,18 @@ const queryModel = require('../models/query.model');
 const dataModel = require('../models/data.model');
 const aiModel = require('../models/ai.model');
 
-const processQuery = (req, res) => {
+const processQuery = async (req, res) => {
     try {
         const userQuery = req.body.query;
 
         const neededData = queryModel.processQuery(userQuery);
 
-        const data = dataModel.getData(neededData);
+        const data = await dataModel.getData(neededData);
 
-        // AI model generates a response based on the data - what should it return?
-        // const aiResponse = aiModel.generateResponse(data);
-
-        const response = {
-            data,   
-        }
+        const aiResponse = await aiModel.generateResponse(data);
 
         return res.status(200).json(
-            response
+            aiResponse
         );
     } catch (error) {
         console.error(error);

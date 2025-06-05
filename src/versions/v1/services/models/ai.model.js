@@ -1,21 +1,39 @@
-// AI model
-// turns the data into a response
-// "Latvia's housing prices increased by 15%..."
+const markdownHelper = require('../../../../helpers/markdown')
 
-// function takes the data and a prompt and send it to AI API
+require('dotenv').config();
+const axios = require('axios');
 
-// Data will be in this format:
-// ### Housing Price Index
+const AI_MODEL = process.env.AI_MODEL;
+const AI_API_URL = process.env.AI_API_URL;
 
-// | Year | Value  |
-// |------|--------|
-// | 2020 | 100.2  |
-// | 2021 | 102.5  |
-// | 2022 | 105.7  |
+const generateResponse = async (data) => {
+    const markdownTables = markdownHelper.convertDataToMarkdown(data); 
 
+    const content = `
+    You are a data analyst. Summarize the economic trends for the given countries using the data below. Focus on GDP and population growth or decline. Be concise.
 
+    ${markdownTables}
 
+    Please provide an overall summary and any interesting observations. Use bullet points for clarity.
+    `;
 
+    const payload = {
+        "model": AI_MODEL,
+        stream: false,
+        "messages": [{
+            "role" : "user",
+            content
+        }]
+    }
+
+    const response = await axios.post(`${AI_API_URL}/api/chat`, payload)
+
+    return response.data;
+}
+
+module.exports = {
+    generateResponse    
+};
 
 // TO-DO
 // 1. Returns just the text
