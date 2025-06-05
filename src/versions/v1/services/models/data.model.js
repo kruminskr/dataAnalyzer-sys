@@ -54,7 +54,7 @@ const getPopulationData = (country, years) => {
 
 // Function that takes {countries: ['Germany'], years: [2020,2021,2022], dataType: 'housing'} 
 // and calls all the function to gather data for each data type
-const getData = (neededData) => {
+const getData = async (neededData) => {
   const result = [];
 
   for (const country of neededData.countries) {
@@ -95,3 +95,5 @@ module.exports = {
 // 2. Data gets called from eurostat API (Need to convert from SDMX to a format which AI can read)
 
 // 3. Moodel recives what data sets needs to be called and calls these data sets, works with any data set (previosly only 3 data sets)
+// The data gets converted from sdmx to a format that the AI can read using a npm package:
+// jsonstat-suite??

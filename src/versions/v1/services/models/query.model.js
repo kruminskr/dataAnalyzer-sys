@@ -81,4 +81,6 @@ module.exports = {
 // TO-DO
 // 1. statis function to extract keywords from a user query
 
-// 2. Later on the user query gets anylized by AI?
+// 2. Later on the user query gets anylized by AI
+
+// 3. user query gets anylized by AI and returns year range, needed data sets and countries
