@@ -2,7 +2,7 @@ const queryModel = require('../models/query.model');
 const dataModel = require('../models/data.model');
 const aiModel = require('../models/ai.model');
 
-const processQuery = async (req, res) => {
+const processQuery = async (req, res, next) => {
     try {
         const userQuery = req.body.query;
 
@@ -12,14 +12,20 @@ const processQuery = async (req, res) => {
 
         const aiResponse = await aiModel.generateResponse(data);
 
-        return res.status(200).json(
-            aiResponse
-        );
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Internal Server Error' });
-    }
+        const response = {
+            query: userQuery,
+            analysis: aiResponse,
+            metadata: {
+                countries: neededData.countries,
+                indicatrors: neededData.dataType,
+                years: neededData.years,
+            }
+        }
 
+        return res.status(200).json(response);
+    } catch (error) {
+        next(error);
+    }
 }
 
 module.exports = {

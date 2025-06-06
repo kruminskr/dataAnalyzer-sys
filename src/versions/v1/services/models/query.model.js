@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+const ApiError = require('../../../../utiles/AppError');
+
 const countriesString = process.env.COUNTRIES;
 const dataTypesString = process.env.DATA_TYPES;
 
@@ -65,10 +67,25 @@ const extractDataTypes = (text) => {
 }
 
 const processQuery = (userQuery) => {
+    const countries = extractCountries(userQuery);
+    if (countries.length === 0) {
+        throw new ApiError('No valid countries found in the query.', 400);
+    }
+
+    const years = extractYears(userQuery);
+    if (years.length === 0) {
+        throw new ApiError('No valid years found in the query.', 400);  
+    }
+
+    const  dataType = extractDataTypes(userQuery);
+    if (dataType.length === 0) {   
+        throw new ApiError('No valid data types found in the query.', 400);
+    }   
+
     const neededData =  {
-        countries: extractCountries(userQuery),
-        years: extractYears(userQuery),
-        dataType: extractDataTypes(userQuery),
+        countries,
+        years,
+        dataType
     };
 
     return neededData;
