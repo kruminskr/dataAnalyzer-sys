@@ -1,59 +1,129 @@
-const housingRawData = require('../../../../../data/housing.json');
-const gdpRawData = require('../../../../../data/gdp.json');
-const populationRawData = require('../../../../../data/population.json');
+const axios = require('axios');
+const qs = require('qs');
 
-const getHousingData = (country, years) => {
-    const match = housingRawData.find(entry => entry.country.toLowerCase() === country.toLowerCase());
+require('dotenv').config();
 
-    if (!match) return { dataType: 'housing', years: [] };
+const sdmxHelper = require('../../../../helpers/sdmx.helper');
 
-    const expandedYears = years.flatMap(year => [
-        `${year}-Q1`,
-        `${year}-Q2`,
-        `${year}-Q3`,
-        `${year}-Q4`,
-    ]);
+// House Price Index (HPI)
+const getHousePriceIndexData = async (geo, time) => {
+  const params = {
+    format: 'json',
+    purchase: 'TOTAL',
+    unit: 'I15_A_AVG',
+    time,
+    geo  
+  };
 
-    const filteredData = match.years.filter(entry => expandedYears.includes(entry.year));
+  // vai šis tiešām labākais solution?
+  // nepieciešams, lai pareizi izskatītis geo param
+  const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
 
-    return {
-        dataType: 'housing',
-        years: filteredData
-    };
-};
+  // data set indicator vajadzētu izņemt ārpus?
+  const response = await axios.get(`${process.env.EUROSTAT_API_URL}/prc_hpi_a?${queryString}`);
 
-const getGDPData = (country, years) => {
-    const match = gdpRawData.find(entry => entry.country.toLowerCase() === country.toLowerCase());
+  const data = response.data;
+  const dimensions = response.data.dimension;
 
-    if (!match) return { dataType: 'gdp', years: [] };
+  const formattedData = sdmxHelper.sdmxConverter(data, dimensions);
 
-    const sanitizedYears = years.map(String);
-
-    const filteredData = match.years.filter(entry => sanitizedYears.includes(entry.year));
-
-    return {
-        dataType: 'gdp',
-        years: filteredData
-    };
+  return formattedData;
 }
 
-const getPopulationData = (country, years) => {
-    const match = populationRawData.find(entry => entry.country.toLowerCase() === country.toLowerCase());
-    if (!match) return { dataType: 'population', years: [] };
+// Actual Rent Prices 
+const getRentPriceData = async (geo, time) => {
+  const params = {
+    format: 'json',
+    coicop: 'CP041',
+    unit: 'INX_A_AVG',
+    time,
+    geo  
+  };
 
+  const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
 
-    const sanitizedYears = years.map(String);
+  const response = await axios.get(`${process.env.EUROSTAT_API_URL}/PRC_HICP_AIND?${queryString}`);
 
-    const filteredData = match.years.filter(entry => sanitizedYears.includes(entry.year));
+  const data = response.data;
+  const dimensions = response.data.dimension;
 
-    return {
-        dataType: 'population',
-        years: filteredData
-    };
+  const formattedData = sdmxHelper.sdmxConverter(data, dimensions);
+
+  return formattedData;
 }
 
-// Function that takes {countries: ['Germany'], years: [2020,2021,2022], dataType: 'housing'} 
-// and calls all the function to gather data for each data type
+// Building Permits (new housing supply)
+const getBuildingPermitsData = async (geo, time) => {
+  const params = {
+    format: 'json',
+    indic_bt: 'BPRM_SQM',
+    cpa2_1: 'CPA_F41001_41002',
+    s_adj: 'NSA',
+    unit: 'MIO_M2',
+    time,
+    geo  
+  };
+
+  const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
+
+  const response = await axios.get(`${process.env.EUROSTAT_API_URL}/sts_cobp_a?${queryString}`);
+
+  const data = response.data;
+  const dimensions = response.data.dimension;
+
+  const formattedData = sdmxHelper.sdmxConverter(data, dimensions);
+
+  return formattedData;
+}
+
+// Housing Cost Overburden Rate
+const getHousingCostOverburdenRateData = async (geo, time) => {
+  const params = {
+    format: 'json',
+    unit: 'PC',
+    incgrp: 'TOTAL',
+    age: 'TOTAL',
+    sex: 'T',
+    time,
+    geo  
+  };
+
+  const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
+
+  const response = await axios.get(`${process.env.EUROSTAT_API_URL}/ILC_LVHO07A?${queryString}`);
+
+  const data = response.data;
+  const dimensions = response.data.dimension;
+
+  const formattedData = sdmxHelper.sdmxConverter(data, dimensions);
+
+  return formattedData;
+}
+
+
+// Population by Region
+const getPopulationByRegionData = async (geo, time) => {
+  const params = {
+    format: 'json',
+    unit: 'NR',
+    age: 'TOTAL',
+    sex: 'T',
+    time,
+    geo  
+  };
+
+  const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
+
+  const response = await axios.get(`${process.env.EUROSTAT_API_URL}/DEMO_PJAN?${queryString}`);
+
+  const data = response.data;
+  const dimensions = response.data.dimension;
+
+  const formattedData = sdmxHelper.sdmxConverter(data, dimensions);
+
+  return formattedData;
+}
+
 const getData = async (neededData) => {
   const result = [];
 
@@ -64,18 +134,29 @@ const getData = async (neededData) => {
     };
 
     if (neededData.dataType.includes('housing')) {
-      const housing = getHousingData(country, neededData.years); 
-      countryData.data.push(housing);
+      const housing = await getHousePriceIndexData(country, neededData.years); 
+
+      countryData.data.push(...housing);
     }
 
-    if (neededData.dataType.includes('gdp')) {
-      const gdp = getGDPData(country, neededData.years);
-      countryData.data.push(gdp);
+    if (neededData.dataType.includes('rent')) {
+      const rent = await getRentPriceData(country, neededData.years);
+      countryData.data.push(...rent);
+    }
+
+    if (neededData.dataType.includes('building')) {
+      const building = await getBuildingPermitsData(country, neededData.years);
+      countryData.data.push(...building);
+    }
+
+    if (neededData.dataType.includes('overburden')) {
+      const overburden = await getHousingCostOverburdenRateData(country, neededData.years);
+      countryData.data.push(...overburden);
     }
 
     if (neededData.dataType.includes('population')) {
-      const population = getPopulationData(country, neededData.years);
-      countryData.data.push(population);
+      const population = await getPopulationByRegionData(country, neededData.years);
+      countryData.data.push(...population);
     }
 
     result.push(countryData);
