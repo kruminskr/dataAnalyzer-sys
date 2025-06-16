@@ -1,7 +1,8 @@
-const markdownHelper = require('../../../../helpers/markdown')
-
 require('dotenv').config();
+
 const axios = require('axios');
+
+const markdownHelper = require('../../../../helpers/markdown')
 
 const AI_MODEL = process.env.AI_MODEL;
 const AI_API_URL = process.env.AI_API_URL;
@@ -28,7 +29,9 @@ const generateResponse = async (data) => {
 
     const response = await axios.post(`${AI_API_URL}/api/chat`, payload)
 
-    return response.data;
+    // return "This is a mock response from the AI model. The actual implementation would involve making a request to the AI API.";
+
+    return response.data.message.content;
 }
 
 module.exports = {
