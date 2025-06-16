@@ -133,34 +133,36 @@ const getData = async (neededData) => {
       data: []
     };
 
-    if (neededData.dataType.includes('housing')) {
+    if (neededData.dataType.includes('PRC_HPI_A')) {
       const housing = await getHousePriceIndexData(country, neededData.years); 
 
       countryData.data.push(...housing);
     }
 
-    if (neededData.dataType.includes('rent')) {
+    if (neededData.dataType.includes('PRC_HICP_AIND')) {
       const rent = await getRentPriceData(country, neededData.years);
       countryData.data.push(...rent);
     }
 
-    if (neededData.dataType.includes('building')) {
+    if (neededData.dataType.includes('STS_COBP_A')) {
       const building = await getBuildingPermitsData(country, neededData.years);
       countryData.data.push(...building);
     }
 
-    if (neededData.dataType.includes('overburden')) {
+    if (neededData.dataType.includes('ILC_LVHO07A')) {
       const overburden = await getHousingCostOverburdenRateData(country, neededData.years);
       countryData.data.push(...overburden);
     }
 
-    if (neededData.dataType.includes('population')) {
+    if (neededData.dataType.includes('DEMO_PJAN')) {
       const population = await getPopulationByRegionData(country, neededData.years);
       countryData.data.push(...population);
     }
 
     result.push(countryData);
   }
+
+  console.log('Data fetched successfully:', result);
 
   return result;
 };

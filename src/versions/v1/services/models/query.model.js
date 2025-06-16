@@ -1,103 +1,60 @@
 require('dotenv').config();
 
-const ApiError = require('../../../../utiles/AppError');
+const axios = require('axios');
 
-const countriesString = process.env.COUNTRIES;
-const dataTypesString = process.env.DATA_TYPES;
+const ApiError = require('../../../../utiles/AppError'); 
 
-const COUNTRIES = countriesString ? countriesString.split(',') : [];
-const DATA_TYPES = dataTypesString ? dataTypesString.split(',') : [];
+const AI_MODEL = process.env.AI_MODEL;
+const AI_API_URL = process.env.AI_API_URL;
 
-const extractYears = (text) => {
-  const currentYear = new Date().getFullYear();
-  const yearsSet = new Set();
+const cleanAIResponse = (response) => {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
 
-const yearRegex = /\b(20\d{2})\b/g;
-    let match;
-    while ((match = yearRegex.exec(text)) !== null) {
-        const year = parseInt(match[1], 10);
-        if (year >= 2000 && year <= currentYear + 1) {
-        yearsSet.add(year);
-        }
+    let parsed = JSON.parse(jsonMatch[0]);
+
+    if (Array.isArray(parsed.years)) {
+        parsed.years = parsed.years.map(y => Number(y));
     }
 
-    const rangeRegex = /\b(?:from|between)\s+(20\d{2})\s+(?:to|and)\s+(20\d{2})\b/g;
-    while ((match = rangeRegex.exec(text)) !== null) {
-        let startYear = parseInt(match[1], 10);
-        let endYear = parseInt(match[2], 10);
-
-        if (startYear > endYear) {
-        [startYear, endYear] = [endYear, startYear];
-        }
-
-        for (let y = startYear; y <= endYear; y++) {
-        if (y >= 2000 && y <= currentYear + 1) {
-            yearsSet.add(y);
-        }
-        }
-    }
-
-    return Array.from(yearsSet).sort();
+    return parsed;
 }
 
-const extractCountries = (text) => {
-    const found = new Set();
-    const lowerText = text.toLowerCase();
+const processQuery = async (userQuery) => {
+    const content = `
+    You will receive a user query about housing or related data.
 
-    for (const country of COUNTRIES) {
-        if (lowerText.includes(country.toLowerCase())) {
-        found.add(country);
-        }
+    Extract the following information and respond ONLY with a valid JSON object, nothing else — no extra text, no explanations, no new lines except those needed for JSON format:
+
+    1. countries: array of 2-letter country codes (e.g. "LV").
+    2. years: array of years mentioned or ranges of years if implied.
+    3. dataType: array of dataset codes best matching the query from this list:
+    - PRC_HPI_A
+    - PRC_HICP_AIND
+    - STS_COBP_A
+    - ILC_LVHO07A
+    - DEMO_PJAN
+
+    User query: "${userQuery}"
+
+    **Respond ONLY with the JSON object, and provide no other text/charecters. The object will be used later in the system**
+    `;
+
+    const payload = {
+        "model": AI_MODEL,
+        stream: false,
+        "messages": [{
+            "role" : "user",
+            content
+        }]
     }
 
-    return Array.from(found);
-}
+    const response = await axios.post(`${AI_API_URL}/api/chat`, payload)
 
-const extractDataTypes = (text) => {
-  const found = new Set();
-  const lowerText = text.toLowerCase();
-
-  for (const type of DATA_TYPES) {
-    if (lowerText.includes(type)) {
-      found.add(type);
-    }
-  }
-
-  return Array.from(found);
-}
-
-const processQuery = (userQuery) => {
-    const countries = extractCountries(userQuery);
-    if (countries.length === 0) {
-        throw new ApiError('No valid countries found in the query.', 400);
-    }
-
-    const years = extractYears(userQuery);
-    if (years.length === 0) {
-        throw new ApiError('No valid years found in the query.', 400);  
-    }
-
-    const  dataType = extractDataTypes(userQuery);
-    if (dataType.length === 0) {   
-        throw new ApiError('No valid data types found in the query.', 400);
-    }   
-
-    const neededData =  {
-        countries,
-        years,
-        dataType
-    };
+    const neededData = cleanAIResponse(response.data.message.content)
 
     return neededData;
-}
+};
 
 module.exports = {
-    processQuery
-}
-
-// TO-DO
-// 1. statis function to extract keywords from a user query
-
-// 2. Later on the user query gets anylized by AI
-
-// 3. user query gets anylized by AI and returns year range, needed data sets and countries
+     processQuery
+     };
