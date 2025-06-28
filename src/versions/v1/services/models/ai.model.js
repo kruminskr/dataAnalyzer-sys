@@ -2,21 +2,22 @@ require('dotenv').config();
 
 const axios = require('axios');
 
+    const { generateAnalysisPrompt } = require('../../../../helpers/promptGenerator')
 const markdownHelper = require('../../../../helpers/markdown')
 
 const AI_MODEL = process.env.AI_MODEL;
 const AI_API_URL = process.env.AI_API_URL;
+const AI_API_KEY = process.env.AI_API_KEY;
 
-const generateResponse = async (data) => {
+const generateResponse = async (data, queryAnalysis) => {
     const markdownTables = markdownHelper.convertDataToMarkdown(data); 
 
-    const content = `
-    You are a data analyst. Summarize the economic trends for the given countries using the data below. Focus on GDP and population growth or decline. Be concise.
-
-    ${markdownTables}
-
-    Please provide an overall summary and any interesting observations. Use bullet points for clarity.
-    `;
+    const content = generateAnalysisPrompt(
+        markdownTables,
+        queryAnalysis.metadata.intent,
+        queryAnalysis.metadata.originalQuery,
+        queryAnalysis.countries
+    );
 
     const payload = {
         "model": AI_MODEL,
@@ -27,18 +28,16 @@ const generateResponse = async (data) => {
         }]
     }
 
-    const response = await axios.post(`${AI_API_URL}/api/chat`, payload)
+    const header = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${AI_API_KEY}`
+    };
 
-    // return "This is a mock response from the AI model. The actual implementation would involve making a request to the AI API.";
+    const response = await axios.post(`${AI_API_URL}/chat/completions`, payload, {headers: header});
 
-    return response.data.message.content;
+    return response.data.choices[0].message.content;
 }
 
 module.exports = {
     generateResponse    
 };
-
-// TO-DO
-// 1. Returns just the text
-
-// 2. Returns the text and some charts

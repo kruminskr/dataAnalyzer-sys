@@ -6,17 +6,15 @@ const processQuery = async (req, res, next) => {
     try {
         const userQuery = req.body.query;
 
-        const neededData = await queryModel.processQuery(userQuery);
+        const queryAnalysis = await queryModel.processQuery(userQuery);
 
-        const data = await dataModel.getData(neededData);
+        const data = await dataModel.getData(queryAnalysis);
 
-        const aiResponse = await aiModel.generateResponse(data);
+        const aiResponse = await aiModel.generateResponse(data, queryAnalysis);
 
         const response = {
-            query: userQuery,
-            data: data, 
             analysis: aiResponse,
-            metadata: neededData
+            data: data,
         }
 
         return res.status(200).json(response);
