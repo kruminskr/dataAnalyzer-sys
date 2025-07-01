@@ -2,6 +2,8 @@ require('dotenv').config();
 
 const axios = require('axios');
 
+const { datasets } = require('../../../../config/dataset.config')
+
 const AI_MODEL = process.env.AI_MODEL;
 const AI_API_URL = process.env.AI_API_URL;
 const AI_API_KEY = process.env.AI_API_KEY;
@@ -54,13 +56,9 @@ const classifyQueryIntent = async (userQuery) => {
     };
 
 const extractDataRequirements = async (userQuery, queryIntent) => {
-    const datasetDescriptions = {
-        "PRC_HPI_A": "House Price Index - tracks housing price changes over time",
-        "PRC_HICP_AIND": "Harmonized Index Consumer Prices - inflation data", 
-        "STS_COBP_A": "Construction permits and building activity",
-        "ILC_LVHO07A": "Housing cost burden statistics",
-        "DEMO_PJAN": "Population demographics and changes"
-    };
+    const datasetDescriptions = Object.fromEntries(
+        Object.entries(datasets).map(([code, dataset]) => [code, dataset.description])
+    );
 
     const content = `
     Based on this query and its intent, determine what data to retrieve from Eurostat.
