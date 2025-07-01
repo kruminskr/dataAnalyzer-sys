@@ -1,7 +1,9 @@
 const errorHandler = (error, req, res, next) => {
-    const statusCode = error.statusCode || 500;
+    const statusCode = error.statusCode || error.response.status || 500;
 
-    console.error(`Error: ${error}`);
+    const consoleError = error.response.data[0].error || error.response.data 
+
+    console.log(consoleError)
 
     res.status(statusCode).json({
         code: statusCode,
