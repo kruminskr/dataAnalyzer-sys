@@ -4,16 +4,15 @@ const qs = require('qs');
 require('dotenv').config();
 
 const sdmxHelper = require('../../../../helpers/sdmx.helper');
-const { datasets } = require('../../../../config/dataset.config')
 
-const getEurostatData = async (datasetID, geo, time) => {
-  const config = datasets[datasetID];
-
+const getEurostatData = async (datasetID, neededParams, geo, time) => {
   const params = {
-    ...config.staticParams,
+    ...neededParams,
     time,
     geo  
   };
+
+  console.log('Request Parameters:', params);
 
   const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
 
@@ -36,8 +35,10 @@ const getData = async (neededData) => {
       data: []
     };
 
-    const datasetPromises = neededData.dataType.map(datasetID => {
-      return getEurostatData(datasetID, country, neededData.years);
+    const datasetPromises = neededData.dataType.map(datasetConfig => {
+      const { dataType: datasetID, params } = datasetConfig; 
+
+      return getEurostatData(datasetID, params, country, neededData.years);
     });
 
     const datasets = await Promise.all(datasetPromises);

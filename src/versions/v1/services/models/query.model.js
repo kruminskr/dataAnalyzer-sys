@@ -8,17 +8,30 @@ const AI_MODEL = process.env.AI_MODEL;
 const AI_API_URL = process.env.AI_API_URL;
 const AI_API_KEY = process.env.AI_API_KEY;
 
+// move to helpers
 const cleanAIResponse = (response) => {
-    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    const jsonMatch = response.match(/\[.*\]|\{.*\}/s); // Match either array or object
 
-    let parsed = JSON.parse(jsonMatch[0]);
-
-    if (Array.isArray(parsed.years)) {
-        parsed.years = parsed.years.map(y => Number(y));
+    if (!jsonMatch) {
+        throw new Error('No valid JSON found in AI response');
     }
 
-    return parsed;
-}
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Normalize year values if it's an array of objects or a single object
+    const normalizeYears = (obj) => {
+        if (obj && Array.isArray(obj.years)) {
+            obj.years = obj.years.map(y => Number(y));
+        }
+        return obj;
+    };
+
+    if (Array.isArray(parsed)) {
+        return parsed.map(normalizeYears);
+    }
+
+    return normalizeYears(parsed);
+};
 
 const classifyQueryIntent = async (userQuery) => {
     const content = `
@@ -60,6 +73,7 @@ const extractDataRequirements = async (userQuery, queryIntent) => {
         Object.entries(datasets).map(([code, dataset]) => [code, dataset.description])
     );
 
+    // models should not contain prompts - vajag parvietot uz /prompts vai arī /helpers/promptGeneraror.js
     const content = `
     Based on this query and its intent, determine what data to retrieve from Eurostat.
 
@@ -78,6 +92,11 @@ const extractDataRequirements = async (userQuery, queryIntent) => {
 
     Respond ONLY with the JSON object.`;
 
+    const header = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${AI_API_KEY}`
+    };
+
     const payload = {
         "model": AI_MODEL,
         stream: false,
@@ -87,25 +106,83 @@ const extractDataRequirements = async (userQuery, queryIntent) => {
         }]
     };
 
+    const response = await axios.post(`${AI_API_URL}/chat/completions`, payload, {headers: header});
+
+    return cleanAIResponse(response.data.choices[0].message.content);
+};
+
+const extractReqParameters = async (datasetIndexes) => {
+    const neededDatasets = Object.values(datasets).filter(dataset =>
+        datasetIndexes.includes(dataset.id)
+    );
+
+    const datasetParamInfo = neededDatasets.map(ds => {
+        const paramDescriptions = Object.entries(ds.params).map(
+            ([param, values]) => `- ${param}: [${values.join(', ')}]`
+        ).join('\n');
+
+        return `Dataset: ${ds.id}
+                Description: ${ds.description}
+                Valid parameters:
+                ${paramDescriptions}
+                `;
+    }).join('\n');
+
+    // The prompt cant handle a case "men vs women". because it can only choose one value for each parameter.
+    // should refine the prompt (the same as all other prompts :D)
+    const content = `
+    You are given a list of Eurostat datasets and their valid parameters. For each dataset, choose one value for each parameter to best support a general analysis of the dataset.
+
+    You MUST respond ONLY with a valid **JSON ARRAY**. Even if there is only one dataset, it MUST be wrapped in an array.
+
+    Format:
+    [
+    {
+        "dataType": "DATASET_ID",
+        "params": {
+        "param1": "value1",
+        "param2": "value2"
+        }
+    },
+    ...repeat for each dataset
+    ]
+
+    Datasets:
+    ${datasetParamInfo}
+    `;
+
+    console.log(content)
+
     const header = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${AI_API_KEY}`
     };
 
+    const payload = {
+        "model": AI_MODEL,
+        stream: false,
+        "messages": [{
+            "role": "user",
+            content
+        }]
+    };
+
     const response = await axios.post(`${AI_API_URL}/chat/completions`, payload, {headers: header});
 
     return cleanAIResponse(response.data.choices[0].message.content);
-};
+}
 
 const processQuery = async (userQuery) => {
     const queryIntent = await classifyQueryIntent(userQuery);
 
     const dataRequirements = await extractDataRequirements(userQuery, queryIntent);
 
+    const requestParameters = await extractReqParameters(dataRequirements.dataType);
+
     const queryAnalysis  = {
         countries: dataRequirements.countries,
         years: dataRequirements.years,
-        dataType: dataRequirements.dataType,
+        dataType: requestParameters,
         metadata: {
             originalQuery: userQuery,
             intent: queryIntent,        

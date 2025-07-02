@@ -63,7 +63,7 @@ const datasets ={
         staticParams: {
             unit: 'NR',
             age: 'TOTAL',
-            // sex: 'T',
+            sex: 'T',
         }
     },
 
@@ -126,10 +126,10 @@ const datasets ={
     LFSA_ERGAN: {
         id: 'LFSA_ERGAN',
         description: 'Share of working-age (15-74) population currently employed',
-        staticParams: {
-            age: 'Y15-74',
-            sex: 'T',
-            citizen: 'TOTAL'
+        params: {
+            age: ['Y15-24', 'Y25-49', 'Y50-74', 'Y15-74'], 
+            sex: ['T', 'M', 'F'],
+            citizen: ['EU27_2020', 'EU27_2020_FOR', 'NEU27_2020_FOR', 'FOR', 'NAT', 'STLS', 'TOTAL', 'NRP']
         }
     },
 
