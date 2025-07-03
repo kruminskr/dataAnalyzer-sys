@@ -5,14 +5,16 @@ require('dotenv').config();
 
 const sdmxHelper = require('../../../../helpers/sdmx.helper');
 
+// each country gets procesed separately
+// for each country a batch of promises is created for all datasets
+// and all param combinations in this dataset
+
 const getEurostatData = async (datasetID, neededParams, geo, time) => {
   const params = {
     ...neededParams,
     time,
     geo  
   };
-
-  console.log('Request Parameters:', params);
 
   const queryString = qs.stringify(params, { arrayFormat: 'repeat' });
 
@@ -26,6 +28,23 @@ const getEurostatData = async (datasetID, neededParams, geo, time) => {
   return formattedData;
 }
 
+const generateParamCombos = (params) => {
+  const keys = Object.keys(params);
+
+  const values = keys.map(key => Array.isArray(params[key]) ? params[key] : [params[key]]);
+
+  const combos = values.reduce(
+    (acc, curr) => acc.flatMap(a => curr.map(b => [...a, b])),
+    [[]]
+  );
+
+  const result = combos.map(combo =>
+    Object.fromEntries(keys.map((key, i) => [key, combo[i]]))
+  );
+
+  return result;
+};
+
 const getData = async (neededData) => {
   const result = [];
 
@@ -35,17 +54,18 @@ const getData = async (neededData) => {
       data: []
     };
 
-    const datasetPromises = neededData.dataType.map(datasetConfig => {
-      const { dataType: datasetID, params } = datasetConfig; 
+    const allPromisesForCountry = neededData.dataType.flatMap(datasetConfig => {
+      const { dataType: datasetID, params } = datasetConfig;
+      const datasetParamCombos = generateParamCombos(params);
 
-      return getEurostatData(datasetID, params, country, neededData.years);
+      return datasetParamCombos.map(paramCombo => {
+        return getEurostatData(datasetID, paramCombo, country, neededData.years);
+      });
     });
 
-    const datasets = await Promise.all(datasetPromises);
+    const data = await Promise.all(allPromisesForCountry);
 
-    for (const data of datasets) {
-      countryData.data.push(...data);
-    }
+    countryData.data.push(...data.flat().filter(Boolean));
 
     result.push(countryData);
   }

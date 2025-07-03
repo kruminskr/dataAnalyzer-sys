@@ -18,7 +18,6 @@ const cleanAIResponse = (response) => {
 
     const parsed = JSON.parse(jsonMatch[0]);
 
-    // Normalize year values if it's an array of objects or a single object
     const normalizeYears = (obj) => {
         if (obj && Array.isArray(obj.years)) {
             obj.years = obj.years.map(y => Number(y));
@@ -116,17 +115,7 @@ const extractReqParameters = async (datasetIndexes) => {
         datasetIndexes.includes(dataset.id)
     );
 
-    const datasetParamInfo = neededDatasets.map(ds => {
-        const paramDescriptions = Object.entries(ds.params).map(
-            ([param, values]) => `- ${param}: [${values.join(', ')}]`
-        ).join('\n');
-
-        return `Dataset: ${ds.id}
-                Description: ${ds.description}
-                Valid parameters:
-                ${paramDescriptions}
-                `;
-    }).join('\n');
+    const paramsJson = JSON.stringify(neededDatasets, null, 2)
 
     // The prompt cant handle a case "men vs women". because it can only choose one value for each parameter.
     // should refine the prompt (the same as all other prompts :D)
@@ -148,10 +137,8 @@ const extractReqParameters = async (datasetIndexes) => {
     ]
 
     Datasets:
-    ${datasetParamInfo}
+    ${paramsJson}
     `;
-
-    console.log(content)
 
     const header = {
         "Content-Type": "application/json",
@@ -174,10 +161,32 @@ const extractReqParameters = async (datasetIndexes) => {
 
 const processQuery = async (userQuery) => {
     const queryIntent = await classifyQueryIntent(userQuery);
+    // const queryIntent = {
+    //     primaryIntent: 'trend_analysis',
+    //     analysisType: 'single_country',
+    //     complexity: 'simple',
+    //     requiresComparison: false,
+    //     specificActions: [ 'analyze_trends' ]
+    // }
 
     const dataRequirements = await extractDataRequirements(userQuery, queryIntent);
+    // const dataRequirements = {
+    //     countries: [ 'LV' ],
+    //     years: [ 2015, 2016, 2017, 2018 ],
+    //     dataType: [ 'LFSA_ERGAN', 'EXT_LT_INTRATRD' ]
+    // }
 
     const requestParameters = await extractReqParameters(dataRequirements.dataType);
+    // const requestParameters = [
+    //     {
+    //         dataType: 'LFSA_ERGAN',
+    //         params: { age: 'Y15-74', sex: 'T', citizen: 'TOTAL' }
+    //     },
+    //     {
+    //         dataType: 'EXT_LT_INTRATRD',
+    //         params: { indic_et: 'MIO_EXP_VAL', sitc06: 'TOTAL', partner: 'WORLD' }
+    //     }
+    // ]
 
     const queryAnalysis  = {
         countries: dataRequirements.countries,
