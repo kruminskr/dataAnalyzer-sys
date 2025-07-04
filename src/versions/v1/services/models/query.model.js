@@ -7,6 +7,7 @@ const { datasets } = require('../../../../config/dataset.config')
 const AI_MODEL = process.env.AI_MODEL;
 const AI_API_URL = process.env.AI_API_URL;
 const AI_API_KEY = process.env.AI_API_KEY;
+const EUROSTAT_API_URL = process.env.EUROSTAT_API_URL;
 
 // move to helpers
 const cleanAIResponse = (response) => {
@@ -73,14 +74,16 @@ const extractDataRequirements = async (userQuery, queryIntent) => {
     );
 
     // models should not contain prompts - vajag parvietot uz /prompts vai arī /helpers/promptGeneraror.js
+
+    //    Available datasets:
+    // ${Object.entries(datasetDescriptions).map(([code, desc]) => `- ${code}: ${desc}`).join('\n')}
+
     const content = `
     Based on this query and its intent, determine what data to retrieve from Eurostat.
 
     Query: "${userQuery}"
     Intent: ${JSON.stringify(queryIntent)}
-
-    Available datasets:
-    ${Object.entries(datasetDescriptions).map(([code, desc]) => `- ${code}: ${desc}`).join('\n')}
+    
 
     Extract and respond ONLY with a valid JSON object:
     {
@@ -110,19 +113,55 @@ const extractDataRequirements = async (userQuery, queryIntent) => {
     return cleanAIResponse(response.data.choices[0].message.content);
 };
 
-const extractReqParameters = async (datasetIndexes) => {
-    const neededDatasets = Object.values(datasets).filter(dataset =>
-        datasetIndexes.includes(dataset.id)
-    );
+const getDatasetParameters = async (datasetIndexes) => {
+    const paramOptions = [];
 
-    const paramsJson = JSON.stringify(neededDatasets, null, 2)
+    for (const datasetID of datasetIndexes) {
+        const params = {
+            time: '2099' // Use future year so there are no values, only dimensions
+        }
 
-    // The prompt cant handle a case "men vs women". because it can only choose one value for each parameter.
+        const { data } = await axios.get(`${EUROSTAT_API_URL}/${datasetID}`, { params });
+
+        const dimensions = {
+            id: datasetID,
+            description: data.label,
+            params: {}
+        };
+
+        for (const dimKey in data.dimension) {
+            if (dimKey === 'time' || dimKey === 'geo') {
+                continue; 
+            }
+
+            const dimension = data.dimension[dimKey];
+
+            const label = dimension.label;
+            const possibleValues = dimension.category.label
+
+            dimensions.params[dimKey] = {
+                label,
+                options: possibleValues
+            };
+        }
+        paramOptions.push(dimensions);
+    }
+    return paramOptions;
+}
+
+const extractReqParameters = async (datasetParams, userQuery) => {
     // should refine the prompt (the same as all other prompts :D)
     const content = `
-    You are given a list of Eurostat datasets and their valid parameters. For each dataset, choose one value for each parameter to best support a general analysis of the dataset.
+    You are given a list of Eurostat datasets and their valid parameters. Based on the user's query, choose the most relevant value(s) for each parameter to support meaningful analysis.
 
-    You MUST respond ONLY with a valid **JSON ARRAY**. Even if there is only one dataset, it MUST be wrapped in an array.
+    Query:
+    "${userQuery}"
+
+    If a comparison is meaningful (e.g., men vs women, different age groups), return an **array of values** for that parameter.
+
+    If no comparison is needed, return a single string value.
+
+    Respond ONLY with a valid **JSON ARRAY**, even if only one dataset is needed.
 
     Format:
     [
@@ -130,14 +169,14 @@ const extractReqParameters = async (datasetIndexes) => {
         "dataType": "DATASET_ID",
         "params": {
         "param1": "value1",
-        "param2": "value2"
+        "param2": ["value1", "value2"]
         }
     },
     ...repeat for each dataset
     ]
 
     Datasets:
-    ${paramsJson}
+    ${JSON.stringify(datasetParams, null, 2)}
     `;
 
     const header = {
@@ -176,7 +215,9 @@ const processQuery = async (userQuery) => {
     //     dataType: [ 'LFSA_ERGAN', 'EXT_LT_INTRATRD' ]
     // }
 
-    const requestParameters = await extractReqParameters(dataRequirements.dataType);
+    const datasetParams = await getDatasetParameters(dataRequirements.dataType);
+
+    const requestParameters = await extractReqParameters(datasetParams, userQuery);
     // const requestParameters = [
     //     {
     //         dataType: 'LFSA_ERGAN',

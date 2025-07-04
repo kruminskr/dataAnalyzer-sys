@@ -1,3 +1,6 @@
+// Need to add a description and title of each table from the eurostat API data dimensionas
+// so it can be referenced later in the AI analysis of data
+// needed because of same indicator different dimensions comparison and so on
 const sdmxConverter = (data, dimensions) => {
     const convertedData = [];
 
@@ -15,13 +18,30 @@ const sdmxConverter = (data, dimensions) => {
     const timeDimensionIndexInId = idOrder.indexOf('time');
     const sizeOfTime = sizes[timeDimensionIndexInId];
 
+    const params = {}
+
+    for (const dimKey in dimensions) {
+        if (dimKey === 'geo' || dimKey === 'time') {
+            continue; 
+        }
+
+        const dim = dimensions[dimKey];
+        const labelKey = dim.label; 
+
+        const categoryLabel = dim.category?.label;
+        if (categoryLabel) {
+            const onlyValue = Object.values(categoryLabel)[0]; 
+            params[labelKey] = onlyValue;
+        }
+    }
+
     for (const geoCode in geoLabels) {
         if (geoLabels.hasOwnProperty(geoCode)) {
-            const countryName = geoLabels[geoCode];
             const geoIndex = geoIndices[geoCode];
 
             const countryData = {
-                dataType: data.label, 
+                datasetTitle: data.label, 
+                datasetDetails: params,
                 years: []
             };
 
