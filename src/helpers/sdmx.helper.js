@@ -1,6 +1,3 @@
-// Need to add a description and title of each table from the eurostat API data dimensionas
-// so it can be referenced later in the AI analysis of data
-// needed because of same indicator different dimensions comparison and so on
 const sdmxConverter = (data, dimensions) => {
     const convertedData = [];
 

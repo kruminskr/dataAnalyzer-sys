@@ -1,4 +1,4 @@
-const generateAnalysisPrompt = (markdownTables, queryIntent, originalQuery, countries) => {
+const generateAnalysisPrompt = (data, queryIntent, originalQuery, countries) => {
     const basePrompts = {
         comparison: `You are a comparative data analyst. Your task is to compare data between the specified countries, highlighting differences, similarities, and relative performance.`,
         
@@ -35,7 +35,7 @@ const generateAnalysisPrompt = (markdownTables, queryIntent, originalQuery, coun
     ${complexityInstructions[queryIntent.complexity]}
 
     Data to analyze:
-    ${markdownTables}
+    ${data}
 
     Provide your analysis based on the requirements above.`;
 

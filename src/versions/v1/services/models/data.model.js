@@ -63,6 +63,7 @@ const getData = async (neededData) => {
       });
     });
 
+    // should add error handling, if one dataset fails, it should not stop the whole process
     const data = await Promise.all(allPromisesForCountry);
 
     countryData.data.push(...data.flat().filter(Boolean));

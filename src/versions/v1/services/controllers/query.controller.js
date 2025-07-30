@@ -10,11 +10,11 @@ const processQuery = async (req, res, next) => {
 
         const data = await dataModel.getData(queryAnalysis);
 
-        const aiResponse = await aiModel.generateResponse(data, queryAnalysis);
+        const analysis = await aiModel.generateResponse(data, queryAnalysis);
 
         const response = {
-            analysis: aiResponse,
-            data: data,
+            analysis,
+            data,
         }
 
         return res.status(200).json(response);
@@ -26,4 +26,5 @@ const processQuery = async (req, res, next) => {
 module.exports = {
     processQuery
 };
+
 
