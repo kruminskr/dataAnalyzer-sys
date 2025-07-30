@@ -1,15 +1,25 @@
 const errorHandler = (error, req, res, next) => {
-    const statusCode = error.statusCode || error.response.status || 500;
+    const status = error.statusCode || error.response?.status || 500;
+    const code = error?.code || 'INTERNAL_SERVER_ERROR';
+    const host  = error?.request?.host;
 
-    const consoleError = error.response.data[0].error || error.response.data 
+    const response = {
+        status,
+        code,
+    }
 
-    console.log(consoleError)
+    if (host) {
+        response.message = `${host} - ${error.message}`;
+        
+    }
+    if (!host) {
+        response.message = error.message;
+        response.stack = error.stack;
+    }
 
-    res.status(statusCode).json({
-        code: statusCode,
-        status: 'error',
-        message: error.message || 'Internal Server Error'
-    });
+    console.error(response)
+
+    res.status(status).json(response);
 };
 
 module.exports = errorHandler;
