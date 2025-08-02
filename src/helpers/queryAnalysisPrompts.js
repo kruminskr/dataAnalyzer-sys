@@ -15,7 +15,7 @@ Respond ONLY with the JSON object.
 `;
 
 const extractDataRequirementsPrompt = (userQuery, queryIntent, datasetDescriptions) => `
-Based on this query and its intent, determine what data to retrieve from Eurostat.
+You are tasked with selecting all potentially relevant datasets from Eurostat that can help answer the user's question comprehensively.
 
 Query: "${userQuery}"
 Intent: ${JSON.stringify(queryIntent)}
@@ -23,14 +23,16 @@ Intent: ${JSON.stringify(queryIntent)}
 Available datasets:
 ${Object.entries(datasetDescriptions).map(([code, desc]) => `- ${code}: ${desc}`).join('\n')}
 
-Extract and respond ONLY with a valid JSON object:
+Analyze the query and its intent carefully. Then extract ALL dataset codes from the list above that might provide useful or complementary data, even if indirectly related. Aim for inclusiveness to enable a richer analysis.
+
+Return ONLY a valid JSON object in the following format:
 {
-    "countries": ["array of 2-letter country codes like LV, EE, LT"],
-    "years": ["array of years like 2020, 2021 or ranges"],
-    "dataType": ["array of dataset codes needed"]
+  "countries": ["array of 2-letter country codes like LV, EE, LT"],
+  "years": ["array of years like 2020, 2021"],
+  "dataType": ["array of dataset codes needed"]
 }
 
-Respond ONLY with the JSON object.
+Only return the JSON object. Do not include any explanations or additional text.
 `;
 
 const extractReqParametersPrompt = (datasetParams, userQuery) => `

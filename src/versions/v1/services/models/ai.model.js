@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const axios = require('axios');
 
+const { cleanAIResponse } = require('../../../../helpers/utiles');
 const { generateAnalysisPrompt } = require('../../../../helpers/dataAnalysisPrompts');
 
 const AI_MODEL = process.env.AI_MODEL;
@@ -32,7 +33,7 @@ const generateResponse = async (data, queryAnalysis) => {
 
     const response = await axios.post(`${AI_API_URL}/chat/completions`, payload, {headers});
 
-    return response.data.choices[0].message.content;
+    return cleanAIResponse(response.data.choices[0].message.content);
 }
 
 module.exports = {
