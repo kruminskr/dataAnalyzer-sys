@@ -118,35 +118,13 @@ const extractReqParameters = async (datasetParams, userQuery) => {
 }
 
 const processQuery = async (userQuery) => {
-    // const queryIntent = await classifyQueryIntent(userQuery);
-    const queryIntent = {
-        primaryIntent: 'trend_analysis',
-        analysisType: 'single_country',
-        complexity: 'simple',
-        requiresComparison: false,
-        specificActions: [ 'analyze_trends' ]
-    }
+    const queryIntent = await classifyQueryIntent(userQuery);
 
-    // const dataRequirements = await extractDataRequirements(userQuery, queryIntent);
-    const dataRequirements = {
-        countries: [ 'LV' ],
-        years: [ 2015, 2016, 2017, 2018 ],
-        dataType: [ 'LFSA_ERGAN', 'EXT_LT_INTRATRD' ]
-    }
+    const dataRequirements = await extractDataRequirements(userQuery, queryIntent);
 
     const datasetParams = await getDatasetParameters(dataRequirements.dataType);
 
-    // const requestParameters = await extractReqParameters(datasetParams, userQuery);
-    const requestParameters = [
-        {
-            dataType: 'LFSA_ERGAN',
-            params: { age: 'Y15-74', sex: 'T', citizen: 'TOTAL' }
-        },
-        {
-            dataType: 'EXT_LT_INTRATRD',
-            params: { indic_et: 'MIO_EXP_VAL', sitc06: 'TOTAL', partner: 'WORLD' }
-        }
-    ]
+    const requestParameters = await extractReqParameters(datasetParams, userQuery);
 
     const queryAnalysis  = {
         countries: dataRequirements.countries,
