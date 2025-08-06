@@ -12,12 +12,7 @@ const processQuery = async (req, res, next) => {
 
         const analysis = await aiModel.generateResponse(data, queryAnalysis);
 
-        const response = {
-            analysis,
-            data,
-        }
-
-        return res.status(200).json(response);
+        return res.status(200).json(analysis);
     } catch (error) {
         next(error);
     }
