@@ -10,7 +10,6 @@ const errorHandler = (error, req, res, next) => {
 
     if (host) {
         response.message = `${host} - ${error.message}`;
-        
     }
     if (!host) {
         response.message = error.message;
