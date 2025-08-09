@@ -6,6 +6,8 @@ const queryController = require('../services/controllers/query.controller');
 
 const errorHandler = require('../../../middleware/error.middleware')
 
+app.get('/health', (req, res) => res.sendStatus(200));
+
 router.post('/data', queryController.processQuery);
 
 router.use(errorHandler);
