@@ -13,10 +13,12 @@ This backend service processes user queries in plain English, selects relevant E
 - [Quick Start](#-quick-start)
 - [Technologies](#️-technologies)
 - [Supported Data Categories](#-supported-data-categories)
-- [AWS Infrastructure](#-aws-infrastructure)
+- [AWS Infrastructure](#%EF%B8%8F-aws-infrastructure)
 - [CI/CD Pipeline](#-cicd-pipeline)
 - [Possible Improvements](#-possible-improvements)
 - [Related Projects](#-related-projects)
+
+---
 
 ### 🔄 Process Flow
 1. **Query intent**: User query analyzed by LLM to understand intent
