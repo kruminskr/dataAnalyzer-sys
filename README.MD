@@ -1,108 +1,120 @@
-# 🏡 Data Analysis Tool  – Node.js + Eurostat API + AI
+# 🏡 Eurostat Data Analysis – Node.js + Express + AI
 
-This project is an experimental Node.js API that takes natural language queries about the **Housing, Demographics, Economy, Education and Enviorment** and provides an **AI-generated analysis** based on official **Eurostat** data.
-
-### 📌 Example query:
-> _"What does the real estate market in Latvia look like in the past years?"_
-
----
+A Node.js backend API that transforms natural language queries into intelligent analysis of **Eurostat** data using AI-powered interpretation and dataset selection.
 
 ## 🔍 Overview
 
-The project processes the query, extracts relevant keywords, fetches housing-related datasets from **Eurostat**, and then sends this data to a local AI model for a structured analysis.
+This backend service processes user queries in plain English, selects relevant Eurostat datasets using LLM analysis, fetches the data, and returns comprehensive AI-generated insights with key findings, charts and limitations.
 
-### ✅ Current Capabilities
+## Table of Contents
 
-- Accepts user queries in plain English  
-- Extract user queries intent
-- Extracts keywords for data selection  
-- Fetches Eurostat data using the Eurostat API  
-- Sends selected data to Gemini 1.5 Flash for intelligent interpretation and analysis
-- Returns a human-readable analysis  
+- [Overview](#-overview)
+- [Process Flow](#-process-flow)
+- [Quick Start](#-quick-start)
+- [Technologies](#️-technologies)
+- [Supported Data Categories](#-supported-data-categories)
+- [AWS Infrastructure](#-aws-infrastructure)
+- [CI/CD Pipeline](#-cicd-pipeline)
+- [Possible Improvements](#-possible-improvements)
+- [Related Projects](#-related-projects)
 
----
-
-## 🧠 Technologies Used
-
-- **Node.js** – Core backend framework  
-- **Express.js** – API routing  
-- **Eurostat API** – Data source for EU-level statistics  
-- **Gemini 1.5 Flash** – Google’s advanced AI model used for fast, intelligent data insights
-
----
-
-## 📊 Available Datasets
-
-The API currently supports the following datasets grouped by thematic category:
-
-### 🏘️ Housing & Living Conditions
-
-1. **`PRC_HPI_A`** – House Price Index  
-   Tracks changes in housing purchase prices over time.
-
-2. **`PRC_HICP_AIND`** – Harmonised Index of Consumer Prices (Rent)  
-   Measures rental price inflation.
-
-3. **`STS_COBP_A`** – Building Permits  
-   Indicates housing supply pipeline — how much residential construction is starting.
-
-4. **`ILC_LVHO07A`** – Housing Cost Overburden Rate  
-   Percentage of people spending more than 40% of their income on housing.
-
-5. **`ILC_LVHO05A`** – Overcrowding Rate  
-   Percentage of people living in overcrowded conditions.
-
-### 👥 Demographics & Society
-
-6. **`DEMO_PJAN`** – Population on 1 January  
-   Size and growth of populations by country or region.
-
-7. **`DEMO_MLEXPEC`** – Life Expectancy  
-   Average life expectancy at birth.
-
-8. **`ILC_PEPS01`** – At-Risk-of-Poverty Rate  
-   Share of population with income below 60% of the national median.
-
-9. **`ILC_DI03`** – Median Income  
-   Median income after taxes/transfers — reflects income disparities.
-
-### 💼 Economy & Labour Market
-
-10. **`NAMA_10_GDP`** – Gross Domestic Product (GDP)  
-    Measures overall economic output.
-
-11. **`LC_LCI_R2_A`** – Labour Cost Index  
-    Nominal annual index for wages and salaries in the business economy.
-
-12. **`LFSA_ERGAN`** – Employment Rate  
-    Share of the working-age (15–74) population currently employed.
-
-13. **`UNE_RT_A`** – Unemployment Rate  
-    Percentage of the labor force that is unemployed.
-
-14. **`EXT_LT_INTRATRD`** – Export Values  
-    Export values to all countries (in € million).
-
-### 🎓 Education
-
-15. **`EDAT_LFSE_03`** – Tertiary Education Rate  
-    Share of population aged 15–64 with tertiary education (ISCED 5–8).
-
-16. **`EDAT_LFSE_14`** – Early Leavers from Education and Training  
-    % of 18–24-year-olds with only lower secondary education who are not in school.
-
-### 🌍 Environment & Energy
-
-17. **`NRG_IND_REN`** – Renewable Energy Share  
-    Share of energy consumption from renewable sources.
+### 🔄 Process Flow
+1. **Query intent**: User query analyzed by LLM to understand intent
+2. **Needed datases**: LLM identifies most relevant datasets for the query
+3. **Dataset dimensions**: Fetch dataset dimensions from Eurostat
+4. **Create the params** LLM analyzes datasets dimensions to retrive only the relevant data
+5. **Data Retrieval**: Fetch selected datasets with specified parameters from Eurostat API
+6. **AI Analysis**: Based on the origanl queries intent and Eurostats data, generate an analysis
 
 ---
 
-## 🚧 Project Status
+## 🚀 Quick Start
 
-🛠️ **In development**   
-- User query analysis could be improved
-- Data analysis could be improved
-- Cant get detailed data from Eurostat, just overall trends
-- No frontend yet — API only  
-- CI/CD should be implemented
+### Prerequisites
+- Node.js 20+ 
+- npm or yarn
+
+### Installation
+```bash
+git clone <repository-url>
+npm install
+```
+
+### Environment Variables
+```bash
+APP_URL = http://localhost:5173
+
+# AI
+AI_MODEL = gemini-2.0-flash
+AI_API_URL = https://generativelanguage.googleapis.com/v1beta/openai
+AI_API_KEY = 
+
+# Eurostat API
+EUROSTAT_API_URL = https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data
+
+```
+
+### Run Locally
+```bash
+npm run dev
+```
+
+---
+
+## 🛠️ Technologies
+
+- **Node.js** – Runtime environment
+- **Express.js** – Web framework and API routing
+- **Eurostat API** – Official EU statistics data source
+- **Gemini 2.0 Flash** – LLM for query analysis and data interpretation
+
+
+---
+
+## 📊 Supported Data Categories
+
+- **Housing & Living Conditions** – Real estate, housing costs, living standards
+- **Demographics & Society** – Population, migration, social statistics  
+- **Economy & Labour Market** – GDP, employment, inflation
+- **Education** – Educational attainment
+- **Environment & Energy** – Renewable energy
+
+---
+
+## 🏗️ AWS Infrastructure
+
+### Container Registry
+- **AWS ECR** – Docker images stored in Elastic Container Registry
+### Compute & Orchestration  
+- **AWS ECS** – Elastic Container Service cluster management
+- **Task Definitions** – Separate configurations for backend and frontend services
+
+### Networking & Load Balancing
+- **Application Load Balancer** – Traffic distribution with public endpoints
+- **VPC Configuration** – Secure network isolation
+- **Security Groups** – Controlled inbound/outbound traffic
+
+### Secrets & Configuration
+- **AWS Secrets Manager** – Secure API key and credential storage
+- **Environment Variables** – Runtime configuration management
+
+---
+
+## 🔄 CI/CD Pipeline
+
+### Deployment Process (AWS)
+1. **Code Push** → GitHub repository
+2. **Build** → Docker image creation
+3. **Push** → ECR repository update
+4. **Deploy** → ECS service force-new-deployment
+
+---
+
+## ✅ Possible improvments
+
+- Improved LLM analysis (RAG, few-shot learning, Function calling, Context window management, Feedback loop)
+- A chatbot style system (possible to save chats and ask multiple queries on the same problem)
+---
+
+## 🔗 Related Projects
+- [Eurostat Data Analysis - frontend](https://github.com/kruminskr/dataAnalyzer-app)
